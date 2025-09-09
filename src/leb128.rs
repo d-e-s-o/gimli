@@ -79,23 +79,30 @@ pub mod read {
 
     /// Read an unsigned LEB128 number from the given `Reader` and
     /// return it or an error if reading failed.
+    // Slightly adjusted copy of `rustc` implementation:
+    // https://github.com/rust-lang/rust/blob/be8de5d6a0fc5cb2924e174a809a0aff303f281a/compiler/rustc_serialize/src/leb128.rs#L53
     pub fn unsigned<R: Reader>(r: &mut R) -> Result<u64> {
-        let mut result = 0;
-        let mut shift = 0;
-
+        // The first iteration of this loop is unpeeled. This is a
+        // performance win because this code is hot and integer values less
+        // than 128 are very common, typically occurring 50-80% or more of
+        // the time, even for u64 and u128.
+        let byte = r.read_u8()?;
+        if byte & CONTINUATION_BIT == 0 {
+            return Ok(u64::from(byte));
+        }
+        let mut result = u64::from(low_bits_of_byte(byte));
+        let mut shift = 7;
         loop {
             let byte = r.read_u8()?;
-            if shift == 63 && byte != 0x00 && byte != 0x01 {
+            if byte & CONTINUATION_BIT == 0 {
+                result |= u64::from(byte) << shift;
+                return Ok(result);
+            } else {
+                result |= u64::from(low_bits_of_byte(byte)) << shift;
+            }
+            if shift >= 63 {
                 return Err(Error::BadUnsignedLeb128);
             }
-
-            let low_bits = u64::from(low_bits_of_byte(byte));
-            result |= low_bits << shift;
-
-            if byte & CONTINUATION_BIT == 0 {
-                return Ok(result);
-            }
-
             shift += 7;
         }
     }
