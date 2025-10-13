@@ -188,7 +188,11 @@ impl<R: Reader> DebugInfoUnitHeadersIter<R> {
             Ok(None)
         } else {
             let len = self.input.len();
-            match parse_unit_header(&mut self.input, self.offset.into()) {
+            if self.offset.0.into_u64() == 0 {
+                eprintln!("{}", std::backtrace::Backtrace::force_capture());
+            }
+            let offset = self.offset.into();
+            match parse_unit_header(&mut self.input, offset) {
                 Ok(header) => {
                     self.offset.0 += len - self.input.len();
                     Ok(Some(header))
@@ -563,10 +567,15 @@ where
     R: Reader<Offset = Offset>,
     Offset: ReaderOffset,
 {
+    let _orig_input = input.clone();
     let (unit_length, format) = input.read_initial_length()?;
     let mut rest = input.split(unit_length)?;
 
     let version = rest.read_u16()?;
+    if version == 4096 {
+        dbg!(unit_offset, unit_length, format);
+        dbg!(_orig_input);
+    }
     let abbrev_offset;
     let address_size;
     let unit_type;
@@ -611,6 +620,7 @@ where
             UnitType::Skeleton(dwo_id)
         }
         constants::DW_UT_split_compile => {
+            dbg!("FOOBAR");
             let dwo_id = parse_dwo_id(&mut rest)?;
             UnitType::SplitCompilation(dwo_id)
         }
@@ -3171,7 +3181,9 @@ impl<R: Reader> DebugTypesUnitHeadersIter<R> {
             Ok(None)
         } else {
             let len = self.input.len();
-            match parse_unit_header(&mut self.input, self.offset.into()) {
+            let offset = self.offset.into();
+            dbg!(offset);
+            match parse_unit_header(&mut self.input, offset) {
                 Ok(header) => {
                     self.offset.0 += len - self.input.len();
                     Ok(Some(header))

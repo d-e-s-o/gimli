@@ -534,7 +534,7 @@ pub trait Reader: Debug + Clone {
         let size = self.read_u8()?;
         match size {
             1 | 2 | 4 | 8 => Ok(size),
-            _ => Err(Error::UnsupportedAddressSize(size)),
+            _ => Err(dbg!(Error::UnsupportedAddressSize(size))),
         }
     }
 
