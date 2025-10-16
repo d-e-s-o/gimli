@@ -978,10 +978,12 @@ impl<R: Reader> DwarfPackage<R> {
     /// # unreachable!()
     /// # }
     pub fn find_cu(&self, id: DwoId, parent: &Dwarf<R>) -> Result<Option<Dwarf<R>>> {
+        dbg!();
         let row = match self.cu_index.find(id.0) {
             Some(row) => row,
-            None => return Ok(None),
+            None => return dbg!(Ok(None)),
         };
+        dbg!(row);
         self.cu_sections(row, parent).map(Some)
     }
 

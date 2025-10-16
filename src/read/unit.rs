@@ -188,9 +188,9 @@ impl<R: Reader> DebugInfoUnitHeadersIter<R> {
             Ok(None)
         } else {
             let len = self.input.len();
-            if self.offset.0.into_u64() == 0 {
-                eprintln!("{}", std::backtrace::Backtrace::force_capture());
-            }
+            //if self.offset.0.into_u64() == 0 {
+            //    eprintln!("{}", std::backtrace::Backtrace::force_capture());
+            //}
             let offset = self.offset.into();
             match parse_unit_header(&mut self.input, offset) {
                 Ok(header) => {
@@ -620,7 +620,6 @@ where
             UnitType::Skeleton(dwo_id)
         }
         constants::DW_UT_split_compile => {
-            dbg!("FOOBAR");
             let dwo_id = parse_dwo_id(&mut rest)?;
             UnitType::SplitCompilation(dwo_id)
         }
